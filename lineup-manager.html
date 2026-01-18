@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basketball Lineup Rotation Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #ff9a56 0%, #3b82f6 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #1f2937;
+            border-bottom: 3px solid #ff9a56;
+            padding-bottom: 10px;
+        }
+
+        .roster-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .player-card {
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .player-card.present {
+            background: #10b981;
+            color: white;
+        }
+
+        .player-card.absent {
+            background: #6b7280;
+            color: #d1d5db;
+        }
+
+        .player-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .player-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .player-name {
+            flex: 1;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .star-btn {
+            background: #fbbf24;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+
+        .star-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .star-btn.inactive {
+            background: #d1d5db;
+            opacity: 0.5;
+        }
+
+        .positions-label {
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .player-card.present .positions-label {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .positions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .position-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .position-btn.selected {
+            background: #ff9a56;
+            color: white;
+        }
+
+        .position-btn.unselected {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+
+        .player-card.absent .position-btn {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .remove-btn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 6px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .remove-btn:hover {
+            background: #dc2626;
+        }
+
+        .add-player-btn {
+            width: 100%;
+            padding: 12px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        .add-player-btn:hover {
+            background: #2563eb;
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1.3rem;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+            margin-bottom: 20px;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
+        }
+
+        .generate-btn:active {
+            transform: translateY(0);
+        }
+
+        .error-message {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .lineup-table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        .lineup-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        .lineup-table th {
+            background: #1f2937;
+            color: white;
+            padding: 12px;
+            font-weight: 600;
+            text-align: center;
+            border: 1px solid #374151;
+        }
+
+        .lineup-table td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #d1d5db;
+            font-weight: 600;
+        }
+
+        .lineup-table .player-name-col {
+            text-align: left;
+            font-weight: 700;
+            background: #f9fafb;
+        }
+
+        .lineup-table .playing {
+            background: #ff9a56;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .lineup-table .sitting {
+            background: #e5e7eb;
+            color: #9ca3af;
+        }
+
+        .lineup-table .total {
+            background: #fbbf24;
+            color: #1f2937;
+            font-weight: 700;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .roster-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏀 Basketball Lineup Manager</h1>
+        <p class="subtitle">Smart rotation planning with constraint-based optimization</p>
+
+        <div class="section">
+            <h2 class="section-title">Player Roster</h2>
+            <div id="rosterGrid" class="roster-grid"></div>
+            <button class="add-player-btn" onclick="addPlayer()">+ Add Player</button>
+        </div>
+
+        <div class="section">
+            <button class="generate-btn" onclick="generateLineup()">🔄 Generate Lineup</button>
+            <div id="errorMessage" class="error-message hidden"></div>
+            <div id="lineupResult"></div>
+        </div>
+    </div>
+
+    <script>
+        // Default player data
+        let players = [
+            { id: 1, name: 'Noah', positions: [2, 3, 4, 5], present: true, star: false },
+            { id: 2, name: 'Reyansh', positions: [1, 2, 3], present: true, star: false },
+            { id: 3, name: 'Colin', positions: [3, 4, 5], present: true, star: true },
+            { id: 4, name: 'John', positions: [1, 2, 3, 4], present: true, star: true },
+            { id: 5, name: 'Iskandar', positions: [1, 2, 3], present: true, star: false },
+            { id: 6, name: 'Arjun', positions: [1, 2, 3, 4], present: true, star: true },
+            { id: 7, name: 'Jacob O', positions: [1, 2, 3], present: true, star: false },
+            { id: 8, name: 'Spencer', positions: [3, 4, 5], present: true, star: false },
+            { id: 9, name: 'Aarav', positions: [2, 3, 4], present: true, star: false },
+            { id: 10, name: 'Jacob S', positions: [2, 3, 4, 5], present: true, star: false }
+        ];
+
+        let nextId = 11;
+
+        function renderRoster() {
+            const grid = document.getElementById('rosterGrid');
+            grid.innerHTML = '';
+
+            players.forEach(player => {
+                const card = document.createElement('div');
+                card.className = `player-card ${player.present ? 'present' : 'absent'}`;
+
+                const header = document.createElement('div');
+                header.className = 'player-header';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'player-checkbox';
+                checkbox.checked = player.present;
+                checkbox.onchange = () => togglePresence(player.id);
+
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.className = 'player-name';
+                nameInput.value = player.name;
+                nameInput.onchange = (e) => updateName(player.id, e.target.value);
+
+                const starBtn = document.createElement('button');
+                starBtn.className = `star-btn ${player.star ? '' : 'inactive'}`;
+                starBtn.textContent = player.star ? '⭐' : '☆';
+                starBtn.onclick = () => toggleStar(player.id);
+
+                header.appendChild(checkbox);
+                header.appendChild(nameInput);
+                header.appendChild(starBtn);
+
+                const posLabel = document.createElement('div');
+                posLabel.className = 'positions-label';
+                posLabel.textContent = 'Positions:';
+
+                const positions = document.createElement('div');
+                positions.className = 'positions';
+
+                for (let i = 1; i <= 5; i++) {
+                    const btn = document.createElement('button');
+                    btn.className = `position-btn ${player.positions.includes(i) ? 'selected' : 'unselected'}`;
+                    btn.textContent = i;
+                    btn.onclick = () => togglePosition(player.id, i);
+                    if (!player.present) {
+                        btn.disabled = true;
+                    }
+                    positions.appendChild(btn);
+                }
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.textContent = 'Remove Player';
+                removeBtn.onclick = () => removePlayer(player.id);
+
+                card.appendChild(header);
+                card.appendChild(posLabel);
+                card.appendChild(positions);
+                card.appendChild(removeBtn);
+
+                grid.appendChild(card);
+            });
+        }
+
+        function togglePresence(id) {
+            const player = players.find(p => p.id === id);
+            player.present = !player.present;
+            renderRoster();
+        }
+
+        function updateName(id, name) {
+            const player = players.find(p => p.id === id);
+            player.name = name.trim() || 'Player';
+        }
+
+        function toggleStar(id) {
+            const player = players.find(p => p.id === id);
+            const starCount = players.filter(p => p.star).length;
+
+            if (!player.star && starCount >= 3) {
+                alert('Maximum 3 star players allowed!');
+                return;
+            }
+
+            player.star = !player.star;
+            renderRoster();
+        }
+
+        function togglePosition(id, position) {
+            const player = players.find(p => p.id === id);
+            const index = player.positions.indexOf(position);
+
+            if (index > -1) {
+                player.positions.splice(index, 1);
+            } else {
+                player.positions.push(position);
+                player.positions.sort((a, b) => a - b);
+            }
+
+            renderRoster();
+        }
+
+        function addPlayer() {
+            players.push({
+                id: nextId++,
+                name: `Player ${players.length + 1}`,
+                positions: [1, 2, 3],
+                present: true,
+                star: false
+            });
+            renderRoster();
+        }
+
+        function removePlayer(id) {
+            if (players.length <= 5) {
+                alert('Must have at least 5 players!');
+                return;
+            }
+            players = players.filter(p => p.id !== id);
+            renderRoster();
+        }
+
+        function generateLineup() {
+            const errorDiv = document.getElementById('errorMessage');
+            const resultDiv = document.getElementById('lineupResult');
+            errorDiv.className = 'error-message hidden';
+            resultDiv.innerHTML = '';
+
+            const presentPlayers = players.filter(p => p.present);
+
+            // Validation
+            if (presentPlayers.length < 5) {
+                showError('Need at least 5 present players to generate lineup!');
+                return;
+            }
+
+            // Check if we can fill all positions
+            for (let pos = 1; pos <= 5; pos++) {
+                if (!presentPlayers.some(p => p.positions.includes(pos))) {
+                    showError(`No player available for position ${pos}! Adjust player positions.`);
+                    return;
+                }
+            }
+
+            // Generate lineup using constraint-based algorithm
+            const lineup = generateOptimalLineup(presentPlayers);
+
+            if (lineup.error) {
+                showError(lineup.error);
+                return;
+            }
+
+            displayLineup(lineup);
+        }
+
+        function generateOptimalLineup(presentPlayers) {
+            const MAX_ATTEMPTS = 15000;
+            const lineup = { q1: {}, q2: {}, q3: {}, q4: {} };
+            const playerQuarters = {}; // Track which quarters each player has played
+
+            presentPlayers.forEach(p => {
+                playerQuarters[p.id] = [];
+            });
+
+            // Generate lineup quarter by quarter
+            for (let quarter = 1; quarter <= 4; quarter++) {
+                const quarterKey = `q${quarter}`;
+                let bestAssignment = null;
+                let bestViolations = Infinity;
+
+                for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+                    const assignment = generateQuarterAssignment(
+                        presentPlayers,
+                        playerQuarters,
+                        quarter
+                    );
+
+                    if (!assignment) continue;
+
+                    const violations = calculateViolations(
+                        assignment,
+                        presentPlayers,
+                        playerQuarters,
+                        quarter
+                    );
+
+                    if (violations < bestViolations) {
+                        bestViolations = violations;
+                        bestAssignment = assignment;
+                    }
+
+                    if (bestViolations === 0) break;
+                }
+
+                if (bestViolations > 0) {
+                    return {
+                        error: `Could not generate valid lineup for Quarter ${quarter}. Violations: ${bestViolations}. Try adjusting player positions or attendance.`
+                    };
+                }
+
+                // Record the assignment
+                lineup[quarterKey] = bestAssignment;
+                Object.keys(bestAssignment).forEach(playerId => {
+                    playerQuarters[playerId].push(quarter);
+                });
+            }
+
+            return lineup;
+        }
+
+        function generateQuarterAssignment(presentPlayers, playerQuarters, currentQuarter) {
+            const assignment = {};
+            const usedPlayers = new Set();
+            const positions = [1, 2, 3, 4, 5];
+            const starPlayers = presentPlayers.filter(p => p.star);
+            const needsStarRule = presentPlayers.length >= 7 && starPlayers.length >= 2;
+
+            // Identify players who MUST play this quarter
+            const mustPlayPlayers = presentPlayers.filter(p => {
+                const quarters = playerQuarters[p.id];
+
+                // Must play if sat last quarter (can't sit 2 in a row)
+                if (currentQuarter > 1 && !quarters.includes(currentQuarter - 1)) {
+                    // Check if they sat the quarter before too
+                    if (currentQuarter > 2 && !quarters.includes(currentQuarter - 2)) {
+                        return true;
+                    }
+                }
+
+                // Must play if needed to reach 2 quarters minimum
+                const quartersLeft = 4 - currentQuarter + 1;
+                const quartersNeeded = 2 - quarters.length;
+                if (quartersNeeded >= quartersLeft) {
+                    return true;
+                }
+
+                return false;
+            });
+
+            // Shuffle positions for randomness
+            const shuffledPositions = shuffle([...positions]);
+
+            // If star rule applies, ensure at least 2 star players are assigned first
+            if (needsStarRule) {
+                const mustPlayStars = mustPlayPlayers.filter(p => p.star);
+                const optionalStars = starPlayers.filter(p => !mustPlayPlayers.some(mp => mp.id === p.id));
+                const shuffledStars = shuffle([...mustPlayStars, ...optionalStars]);
+
+                let starsAssigned = 0;
+                const targetStars = Math.min(2, starPlayers.length);
+
+                // Try to assign at least 2 star players to positions they can play
+                for (const star of shuffledStars) {
+                    if (starsAssigned >= targetStars) break;
+
+                    // Find positions this star can play that aren't assigned yet
+                    const availablePositions = shuffledPositions.filter(pos =>
+                        star.positions.includes(pos) &&
+                        !Object.values(assignment).includes(pos)
+                    );
+
+                    if (availablePositions.length > 0) {
+                        const selectedPos = availablePositions[Math.floor(Math.random() * availablePositions.length)];
+                        assignment[star.id] = selectedPos;
+                        usedPlayers.add(star.id);
+                        starsAssigned++;
+                    }
+                }
+
+                // If we couldn't assign 2 stars, this attempt fails
+                if (starsAssigned < 2) {
+                    return null;
+                }
+            }
+
+            // Try to assign all remaining positions
+            for (const pos of shuffledPositions) {
+                // Skip if position already assigned
+                if (Object.values(assignment).includes(pos)) {
+                    continue;
+                }
+
+                const eligiblePlayers = presentPlayers.filter(p =>
+                    p.positions.includes(pos) && !usedPlayers.has(p.id)
+                );
+
+                if (eligiblePlayers.length === 0) {
+                    return null; // Can't fill this position
+                }
+
+                // Prioritize must-play players
+                const mustPlayEligible = eligiblePlayers.filter(p =>
+                    mustPlayPlayers.some(mp => mp.id === p.id)
+                );
+
+                const selectedPlayer = mustPlayEligible.length > 0
+                    ? mustPlayEligible[Math.floor(Math.random() * mustPlayEligible.length)]
+                    : eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
+
+                assignment[selectedPlayer.id] = pos;
+                usedPlayers.add(selectedPlayer.id);
+            }
+
+            return assignment;
+        }
+
+        function calculateViolations(assignment, presentPlayers, playerQuarters, currentQuarter) {
+            let violations = 0;
+            const playingThisQuarter = new Set(Object.keys(assignment).map(Number));
+
+            presentPlayers.forEach(player => {
+                const quarters = [...playerQuarters[player.id]];
+                const playingNow = playingThisQuarter.has(player.id);
+
+                if (playingNow) {
+                    quarters.push(currentQuarter);
+                }
+
+                // ABSOLUTE RULE 1: No sitting 2 quarters in a row
+                if (currentQuarter > 1 && !playingNow) {
+                    if (!quarters.includes(currentQuarter - 1)) {
+                        violations += 10000;
+                    }
+                }
+
+                // ABSOLUTE RULE 2: Must play at least 2 quarters total
+                if (currentQuarter === 4) {
+                    if (quarters.length < 2) {
+                        violations += 5000;
+                    }
+                }
+            });
+
+            // SECONDARY RULE: At least 2 star players per quarter (when 7+ players)
+            if (presentPlayers.length >= 7) {
+                const starCount = presentPlayers.filter(p =>
+                    p.star && playingThisQuarter.has(p.id)
+                ).length;
+
+                if (starCount < 2) {
+                    violations += 500;
+                }
+            }
+
+            return violations;
+        }
+
+        function shuffle(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function displayLineup(lineup) {
+            const resultDiv = document.getElementById('lineupResult');
+            const presentPlayers = players.filter(p => p.present);
+
+            let html = '<div class="lineup-table-container"><table class="lineup-table">';
+            html += '<thead><tr>';
+            html += '<th>Player</th>';
+            html += '<th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th>';
+            html += '<th>Total</th>';
+            html += '</tr></thead><tbody>';
+
+            presentPlayers.forEach(player => {
+                const quarters = [1, 2, 3, 4].map(q => {
+                    const qKey = `q${q}`;
+                    return lineup[qKey][player.id] || null;
+                });
+
+                const total = quarters.filter(q => q !== null).length;
+
+                html += '<tr>';
+                html += `<td class="player-name-col">${player.name}${player.star ? ' ⭐' : ''}</td>`;
+
+                quarters.forEach(pos => {
+                    if (pos) {
+                        html += `<td class="playing">${pos}</td>`;
+                    } else {
+                        html += `<td class="sitting">—</td>`;
+                    }
+                });
+
+                html += `<td class="total">${total}</td>`;
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.className = 'error-message';
+        }
+
+        // Initialize roster on page load
+        renderRoster();
+    </script>
+</body>
+</html>
